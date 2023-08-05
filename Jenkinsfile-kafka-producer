@@ -1,0 +1,55 @@
+pipeline {
+    agent any
+
+    tools {
+        // Install the Maven version configured as "M3" and add it to the path.
+        maven "M3"
+    }
+    
+    environment {
+        NEXUS_VERSION = "nexus3"
+        NEXUS_PROTOCOL = "http"
+        NEXUS_URL = "172.17.0.1:10680" // Make sure to use 'http://' or 'https://'
+        NEXUS_REPOSITORY = "maven-snapshots"
+        NEXUS_CREDENTIAL_ID = "nexus-password"
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                // Get some code from a GitHub repository
+                git 'https://github.com/MohamedBenChamakh/spring-kafka-producer.git'
+
+                // Run Maven on a Unix agent.
+                 sh "mvn clean package -Dmaven.test.skip=true"
+            }
+        }
+        stage('Push') {
+            steps {
+                script {
+                            nexusArtifactUploader(
+                                nexusVersion: NEXUS_VERSION,
+                                protocol: NEXUS_PROTOCOL,
+                                nexusUrl: NEXUS_URL,
+                                groupId: "com.example",
+                                version: "0.0.1-SNAPSHOT",
+                                repository: NEXUS_REPOSITORY,
+                                credentialsId: NEXUS_CREDENTIAL_ID,
+                                artifacts: [
+                                    [artifactId: "kafka-producer",
+                                    classifier: '',
+                                    file: "target/kafka-producer-0.0.1-SNAPSHOT.jar",
+                                    type: "jar"],
+
+                                    [artifactId: "kafka-producer",
+                                    classifier: '',
+                                    file: "pom.xml",
+                                    type: "pom"]
+                                ]
+                            )
+                        
+                }
+            }
+        }
+    }
+}
