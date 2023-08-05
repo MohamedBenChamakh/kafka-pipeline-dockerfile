@@ -5,16 +5,16 @@ pipeline {
         // Install the Maven version configured as "M3" and add it to the path.
         maven "M3"
     }
-    
-    environment {
-        NEXUS_VERSION = "nexus3"
-        NEXUS_PROTOCOL = "http"
-        NEXUS_URL = "172.17.0.1:10680" // Make sure to use 'http://' or 'https://'
-        NEXUS_REPOSITORY = "maven-snapshots"
-        NEXUS_CREDENTIAL_ID = "nexus-password"
-    }
+
 
     stages {
+        stage('Load Variables') {
+            steps {
+                script {
+                    def var = load 'variables.groovy'
+                }
+            }
+        }
         stage('Build') {
             steps {
                 // Get some code from a GitHub repository
@@ -28,13 +28,13 @@ pipeline {
             steps {
                 script {
                             nexusArtifactUploader(
-                                nexusVersion: NEXUS_VERSION,
-                                protocol: NEXUS_PROTOCOL,
-                                nexusUrl: NEXUS_URL,
+                                nexusVersion: var.NEXUS_VERSION,
+                                protocol: var.NEXUS_PROTOCOL,
+                                nexusUrl: var.NEXUS_URL,
                                 groupId: "com.example",
                                 version: "0.0.1-SNAPSHOT",
-                                repository: NEXUS_REPOSITORY,
-                                credentialsId: NEXUS_CREDENTIAL_ID,
+                                repository: var.NEXUS_REPOSITORY,
+                                credentialsId: var.NEXUS_CREDENTIAL_ID,
                                 artifacts: [
                                     [artifactId: "kafka-producer",
                                     classifier: '',
