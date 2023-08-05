@@ -39,6 +39,14 @@ services:
     volumes:
       - "./nexus:/nexus-data"
 
+  mysql:
+    image: "mysql:8.1.0"
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: 'db'
+      MYSQL_ROOT_PASSWORD: 'password'
+
 networks:
   my_network:
     driver: bridge

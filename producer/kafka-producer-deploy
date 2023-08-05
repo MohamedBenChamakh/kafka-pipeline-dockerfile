@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    environment {
+        NEXUS_URL = 'https://nexus.example.com'  // Replace with your Nexus URL
+        NEXUS_USERNAME = credentials('nexus-username')
+        NEXUS_PASSWORD = credentials('nexus-password')
+        MAVEN_PROJECT_GROUP = 'com.example'
+        MAVEN_PROJECT_NAME = 'my-maven-project'
+        MAVEN_PROJECT_VERSION = '1.0.0'
+        AZURE_VM_SSH_USER = 'azureuser'
+        AZURE_VM_IP_ADDRESS = 'azure-vm-ip-address'
+        ANSIBLE_PRIVATE_KEY = credentials('ansible-private-key')
+    }
+
+    stages {
+        stage('Retrieve Maven Project from Nexus') {
+            steps {
+                script {
+                    def nexusRepoUrl = "${NEXUS_URL}/repository/maven-releases"
+                    def nexusArtifact = "${MAVEN_PROJECT_GROUP}/${MAVEN_PROJECT_NAME}/${MAVEN_PROJECT_VERSION}/${MAVEN_PROJECT_NAME}-${MAVEN_PROJECT_VERSION}.jar"
+                    def mavenArtifact = "${MAVEN_PROJECT_NAME}-${MAVEN_PROJECT_VERSION}.jar"
+                    withCredentials([usernamePassword(credentialsId: NEXUS_USERNAME, passwordVariable: 'NEXUS_PASSWORD')]) {
+                        sh "curl -u $NEXUS_USERNAME:$NEXUS_PASSWORD -O $nexusRepoUrl/$nexusArtifact"
+                        sh "mv $nexusArtifact $mavenArtifact"
+                    }
+                }
+            }
+        }
+
+        stage('Copy Maven Project to Azure VM') {
+            steps {
+                ansiblePlaybook(
+                    playbook: 'ansible_playbook.yml',
+                    inventory: "[$AZURE_VM_IP_ADDRESS]",
+                    credentialsId: 'ansible-ssh-key',
+                    extras: "--extra-vars \"maven_artifact=${MAVEN_PROJECT_NAME}-${MAVEN_PROJECT_VERSION}.jar\""
+                )
+            }
+        }
+    }
+}
