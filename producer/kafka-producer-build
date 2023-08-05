@@ -11,7 +11,7 @@ pipeline {
         stage('Load Variables') {
             steps {
                 script {
-                    def var = load 'variables.groovy'
+                    def var = load './variables'
                 }
             }
         }
