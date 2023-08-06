@@ -8,13 +8,6 @@ pipeline {
 
 
     stages {
-        stage('Load Variables') {
-            steps {
-                script {
-                    def var = load 'producer/variables'
-                }
-            }
-        }
         stage('Build') {
             steps {
                 // Get some code from a GitHub repository
@@ -24,9 +17,10 @@ pipeline {
                  sh "mvn clean package -Dmaven.test.skip=true"
             }
         }
-        stage('Push') {
+        stage('Push to Nexus') {
             steps {
                 script {
+                            def var = load 'producer/variables'
                             nexusArtifactUploader(
                                 nexusVersion: var.NEXUS_VERSION,
                                 protocol: var.NEXUS_PROTOCOL,
